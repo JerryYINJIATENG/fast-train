@@ -1,0 +1,7 @@
+---FastTrain: A Fast Open-Source Train Scheduling/Routing Engine---
+http://code.google.com/p/fast-train/
+Version 0.95, Release Date 01/15/2011.
+Number of Nodes = 6
+Number of Links = 7
+Number of Trains = 40
+Capacity is exceeded: arc2->3,Time: 4

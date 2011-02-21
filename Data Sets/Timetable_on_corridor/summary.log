@@ -1,0 +1,150 @@
+---FastTrain: A Fast Open-Source Train Scheduling/Routing Engine---
+http://code.google.com/p/fast-train/
+Version 0.95, Release Date 01/15/2011.
+Adding Cell 1 -> 1001 ID 0 -> 7RT (1)1;RT (2)2;
+Adding Cell 1001 -> 1002 ID 7 -> 8RT (1)1;RT (2)2;
+Adding Cell 1002 -> 1003 ID 8 -> 9RT (1)1;RT (2)1;
+Adding Cell 1003 -> 1004 ID 9 -> 10RT (1)1;RT (2)2;
+Adding Cell 1004 -> 1005 ID 10 -> 11RT (1)1;RT (2)2;
+Adding Cell 1005 -> 1006 ID 11 -> 12RT (1)1;RT (2)2;
+Adding Cell 1006 -> 1007 ID 12 -> 13RT (1)1;RT (2)2;
+Adding Cell 1007 -> 1008 ID 13 -> 14RT (1)1;RT (2)1;
+Adding Cell 1008 -> 1009 ID 14 -> 15RT (1)1;RT (2)2;
+Adding Cell 1009 -> 2 ID 15 -> 1RT (1)1;RT (2)2;
+Adding Cell 2 -> 2001 ID 1 -> 16RT (1)1;RT (2)2;
+Adding Cell 2001 -> 2002 ID 16 -> 17RT (1)1;RT (2)2;
+Adding Cell 2002 -> 2003 ID 17 -> 18RT (1)1;RT (2)2;
+Adding Cell 2003 -> 2004 ID 18 -> 19RT (1)1;RT (2)2;
+Adding Cell 2004 -> 2005 ID 19 -> 20RT (1)1;RT (2)1;
+Adding Cell 2005 -> 2006 ID 20 -> 21RT (1)1;RT (2)2;
+Adding Cell 2006 -> 2007 ID 21 -> 22RT (1)1;RT (2)2;
+Adding Cell 2007 -> 2008 ID 22 -> 23RT (1)1;RT (2)2;
+Adding Cell 2008 -> 3 ID 23 -> 2RT (1)1;RT (2)2;
+Adding Cell 3 -> 3001 ID 2 -> 24RT (1)1;RT (2)2;
+Adding Cell 3001 -> 3002 ID 24 -> 25RT (1)1;RT (2)1;
+Adding Cell 3002 -> 3003 ID 25 -> 26RT (1)1;RT (2)2;
+Adding Cell 3003 -> 4 ID 26 -> 3RT (1)1;RT (2)1;
+Adding Cell 4 -> 4001 ID 3 -> 27RT (1)1;RT (2)2;
+Adding Cell 4001 -> 4002 ID 27 -> 28RT (1)1;RT (2)2;
+Adding Cell 4002 -> 4003 ID 28 -> 29RT (1)1;RT (2)2;
+Adding Cell 4003 -> 4004 ID 29 -> 30RT (1)1;RT (2)2;
+Adding Cell 4004 -> 4005 ID 30 -> 31RT (1)1;RT (2)2;
+Adding Cell 4005 -> 4006 ID 31 -> 32RT (1)1;RT (2)3;
+Adding Cell 4006 -> 4007 ID 32 -> 33RT (1)1;RT (2)2;
+Adding Cell 4007 -> 4008 ID 33 -> 34RT (1)1;RT (2)2;
+Adding Cell 4008 -> 4009 ID 34 -> 35RT (1)1;RT (2)2;
+Adding Cell 4009 -> 4010 ID 35 -> 36RT (1)1;RT (2)2;
+Adding Cell 4010 -> 4011 ID 36 -> 37RT (1)1;RT (2)2;
+Adding Cell 4011 -> 5 ID 37 -> 4RT (1)1;RT (2)2;
+Adding Cell 5 -> 5001 ID 4 -> 38RT (1)1;RT (2)2;
+Adding Cell 5001 -> 5002 ID 38 -> 39RT (1)1;RT (2)2;
+Adding Cell 5002 -> 5003 ID 39 -> 40RT (1)1;RT (2)2;
+Adding Cell 5003 -> 5004 ID 40 -> 41RT (1)1;RT (2)2;
+Adding Cell 5004 -> 5005 ID 41 -> 42RT (1)1;RT (2)2;
+Adding Cell 5005 -> 5006 ID 42 -> 43RT (1)1;RT (2)2;
+Adding Cell 5006 -> 5007 ID 43 -> 44RT (1)1;RT (2)2;
+Adding Cell 5007 -> 6 ID 44 -> 5RT (1)1;RT (2)2;
+Adding Cell 6 -> 6001 ID 5 -> 45RT (1)1;RT (2)1;
+Adding Cell 6001 -> 6002 ID 45 -> 46RT (1)1;RT (2)2;
+Adding Cell 6002 -> 6003 ID 46 -> 47RT (1)1;RT (2)1;
+Adding Cell 6003 -> 6004 ID 47 -> 48RT (1)1;RT (2)2;
+Adding Cell 6004 -> 6005 ID 48 -> 49RT (1)1;RT (2)1;
+Adding Cell 6005 -> 6006 ID 49 -> 50RT (1)1;RT (2)2;
+Adding Cell 6006 -> 6007 ID 50 -> 51RT (1)1;RT (2)1;
+Adding Cell 6007 -> 6008 ID 51 -> 52RT (1)1;RT (2)2;
+Adding Cell 6008 -> 6009 ID 52 -> 53RT (1)1;RT (2)1;
+Adding Cell 6009 -> 6010 ID 53 -> 54RT (1)1;RT (2)1;
+Adding Cell 6010 -> 6011 ID 54 -> 55RT (1)1;RT (2)2;
+Adding Cell 6011 -> 6012 ID 55 -> 56RT (1)1;RT (2)1;
+Adding Cell 6012 -> 6013 ID 56 -> 57RT (1)1;RT (2)2;
+Adding Cell 6013 -> 6014 ID 57 -> 58RT (1)1;RT (2)1;
+Adding Cell 6014 -> 6015 ID 58 -> 59RT (1)1;RT (2)2;
+Adding Cell 6015 -> 6016 ID 59 -> 60RT (1)1;RT (2)1;
+Adding Cell 6016 -> 6017 ID 60 -> 61RT (1)1;RT (2)2;
+Adding Cell 6017 -> 7 ID 61 -> 6RT (1)1;RT (2)1;
+Number of Nodes = 62
+Number of Links = 67
+Number of Trains = 3
+Capacity is exceeded: arc4006->4007,Time: 108
+Capacity is exceeded: arc4007->4008,Time: 109
+Capacity is exceeded: arc4007->4008,Time: 110
+Capacity is exceeded: arc4008->4009,Time: 110
+Capacity is exceeded: arc4008->4009,Time: 111
+Capacity is exceeded: arc4008->4009,Time: 112
+Capacity is exceeded: arc4009->4010,Time: 111
+Capacity is exceeded: arc4009->4010,Time: 112
+Capacity is exceeded: arc4009->4010,Time: 113
+Capacity is exceeded: arc4009->4010,Time: 114
+Capacity is exceeded: arc4010->4011,Time: 112
+Capacity is exceeded: arc4010->4011,Time: 113
+Capacity is exceeded: arc4010->4011,Time: 114
+Capacity is exceeded: arc4010->4011,Time: 115
+Capacity is exceeded: arc4010->4011,Time: 116
+Capacity is exceeded: arc4011->5,Time: 114
+Capacity is exceeded: arc4011->5,Time: 115
+Capacity is exceeded: arc4011->5,Time: 116
+Capacity is exceeded: arc4011->5,Time: 117
+Capacity is exceeded: arc5->5001,Time: 116
+Capacity is exceeded: arc5->5001,Time: 117
+Capacity is exceeded: arc5->5001,Time: 118
+Capacity is exceeded: arc5001->5002,Time: 118
+Capacity is exceeded: arc5001->5002,Time: 119
+Capacity is exceeded: arc5002->5003,Time: 120
+Price > 0 : arc4001->4002,Time: 100, Price: 0.161
+Price > 0 : arc4002->4003,Time: 101, Price: 0.161
+Price > 0 : arc4002->4003,Time: 102, Price: 0.161
+Price > 0 : arc4003->4004,Time: 102, Price: 0.161
+Price > 0 : arc4003->4004,Time: 103, Price: 0.161
+Price > 0 : arc4003->4004,Time: 104, Price: 0.161
+Price > 0 : arc4004->4005,Time: 103, Price: 1.771
+Price > 0 : arc4004->4005,Time: 104, Price: 0.161
+Price > 0 : arc4004->4005,Time: 105, Price: 0.161
+Price > 0 : arc4004->4005,Time: 106, Price: 0.988
+Price > 0 : arc4005->4006,Time: 104, Price: 1.771
+Price > 0 : arc4005->4006,Time: 105, Price: 1.771
+Price > 0 : arc4005->4006,Time: 106, Price: 0.161
+Price > 0 : arc4005->4006,Time: 107, Price: 0.988
+Price > 0 : arc4005->4006,Time: 108, Price: 0.988
+Price > 0 : arc4006->4007,Time: 105, Price: 0.783
+Price > 0 : arc4006->4007,Time: 106, Price: 0.783
+Price > 0 : arc4006->4007,Time: 107, Price: 1.771
+Price > 0 : arc4006->4007,Time: 108, Price: 2.598
+Price > 0 : arc4006->4007,Time: 109, Price: 0.988
+Price > 0 : arc4006->4007,Time: 110, Price: 0.050
+Price > 0 : arc4006->4007,Time: 111, Price: 0.050
+Price > 0 : arc4007->4008,Time: 106, Price: 0.783
+Price > 0 : arc4007->4008,Time: 107, Price: 0.783
+Price > 0 : arc4007->4008,Time: 108, Price: 0.783
+Price > 0 : arc4007->4008,Time: 109, Price: 2.598
+Price > 0 : arc4007->4008,Time: 110, Price: 2.598
+Price > 0 : arc4007->4008,Time: 111, Price: 0.050
+Price > 0 : arc4007->4008,Time: 112, Price: 0.050
+Price > 0 : arc4007->4008,Time: 113, Price: 0.050
+Price > 0 : arc4008->4009,Time: 108, Price: 0.783
+Price > 0 : arc4008->4009,Time: 109, Price: 0.783
+Price > 0 : arc4008->4009,Time: 110, Price: 1.610
+Price > 0 : arc4008->4009,Time: 111, Price: 2.598
+Price > 0 : arc4008->4009,Time: 112, Price: 0.827
+Price > 0 : arc4008->4009,Time: 113, Price: 0.050
+Price > 0 : arc4008->4009,Time: 114, Price: 0.050
+Price > 0 : arc4009->4010,Time: 110, Price: 0.783
+Price > 0 : arc4009->4010,Time: 111, Price: 1.610
+Price > 0 : arc4009->4010,Time: 112, Price: 1.610
+Price > 0 : arc4009->4010,Time: 113, Price: 0.827
+Price > 0 : arc4009->4010,Time: 114, Price: 0.827
+Price > 0 : arc4009->4010,Time: 115, Price: 0.050
+Price > 0 : arc4010->4011,Time: 112, Price: 1.610
+Price > 0 : arc4010->4011,Time: 113, Price: 1.610
+Price > 0 : arc4010->4011,Time: 114, Price: 0.068
+Price > 0 : arc4010->4011,Time: 115, Price: 0.827
+Price > 0 : arc4010->4011,Time: 116, Price: 0.827
+Price > 0 : arc4011->5,Time: 114, Price: 1.610
+Price > 0 : arc4011->5,Time: 115, Price: 0.068
+Price > 0 : arc4011->5,Time: 116, Price: 0.068
+Price > 0 : arc4011->5,Time: 117, Price: 0.827
+Price > 0 : arc5->5001,Time: 116, Price: 0.068
+Price > 0 : arc5->5001,Time: 117, Price: 0.068
+Price > 0 : arc5->5001,Time: 118, Price: 0.068
+Price > 0 : arc5001->5002,Time: 118, Price: 0.068
+Price > 0 : arc5001->5002,Time: 119, Price: 0.068
+Price > 0 : arc5002->5003,Time: 120, Price: 0.068

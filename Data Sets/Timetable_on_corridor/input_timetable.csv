@@ -1,13 +1,4 @@
-train ID,train type,origin,destination,Departure Time,# of nodes,preferred arrival time,actual trip time,,arc processing time,arc waiting time,timestamp_X,node sequence_Y
-1,1,1,18,364,0,-1,-1,,,,,
-2,2,1,18,452,0,-1,-1,,,,,
-3,1,1,18,469,0,-1,-1,,,,,
-4,1,1,18,557,0,-1,-1,,,,,
-5,1,1,18,572,0,-1,-1,,,,,
-6,2,1,18,659,0,-1,-1,,,,,
-7,1,1,18,677,0,-1,-1,,,,,
-8,1,1,18,784,0,-1,-1,,,,,
-9,2,1,18,881,0,-1,-1,,,,,
-10,1,1,18,899,0,-1,-1,,,,,
-11,1,1,18,1008,0,-1,-1,,,,,
-12,1,1,18,1110,0,-1,-1,,,,,
+train ID,train type,origin,destination,Early Departure Time,Allowable Slack at Departure,Latest Arrival Time,Fixed Revenue,"Incentive for Early Departure from Origin, per unit time","Incentive for Early Arrival to Destination, per unit time",Cost per Unit Time Stopped
+2,2,1,6,26,25,-1,1,0,0,2
+3,2,1,6,52,25,-1,1,0,0,2
+4,1,1,6,78,25,-1,1,0,0,4
