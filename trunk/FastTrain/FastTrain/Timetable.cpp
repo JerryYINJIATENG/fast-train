@@ -25,6 +25,8 @@
 //    along with FastTrain.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "stdafx.h"
+#include <iostream>
+#include <fstream>
 #include "Network.h"
 #include "FastTrain.h"
 using namespace std;
@@ -33,150 +35,29 @@ using namespace std;
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
-void g_ReadTrainProfileCSVFile(LPCTSTR lpszFileName)
-{
-        FILE* st = NULL;
-        fopen_s(&st,lpszFileName,"r");
-
-        int i = 0;
-        if(st!=NULL)
-        {
-                CLink* pLink = 0;
-
-                double default_distance_sum=0;
-                double length_sum = 0;
-                while(!feof(st))
-                {
-                        int FromNode =  g_read_integer(st);
-                        if(FromNode == -1)  // reach end of file
-                                break;
-                        int ToNode = g_read_integer(st);
-
-                        int m_SimulationHorizon = 1;
-
-                        CLink* pLink = g_FindLinkWithNodeNumbers(FromNode, ToNode);
-
-                        if(pLink!=NULL)
-                        {
-                        int TrainType = g_read_integer(st);
-                        int TrainRunningTime = g_read_integer(st);
-                        pLink->m_RuningTimeMap[TrainType] = TrainRunningTime;
-						i++;
-                
-                        }else
-                        {
-                        // to do: output error here
-                        
-                        }
-                }
-
-                fclose(st);
-        }
-}
-
-bool g_ReadTimetableCVSFile(LPCTSTR lpszFileName)
-{
-	FILE* st = NULL;
-	fopen_s(&st,lpszFileName,"r");
-
-	bool b_Initialized = false;
-	if(st!=NULL)
-	{
-		int train_no = 1;
-		while(!feof(st))
-		{
-
-			int train_id =  g_read_integer(st);
-
-			if(train_id == -1)
-				break;
-			CTrain* pTrain = new CTrain();
-			pTrain->m_TrainID = train_id;
-
-			pTrain->m_TrainType =  g_read_integer(st);
-			pTrain->m_OriginNodeNumber =  g_read_integer(st);
-			pTrain->m_DestinationNodeNumber =  g_read_integer(st);
-			pTrain->m_OriginNodeID =  g_NodeNametoIDMap[pTrain->m_OriginNodeNumber];
-			pTrain->m_DestinationNodeID =  g_NodeNametoIDMap[pTrain->m_DestinationNodeNumber ];
-
-			pTrain->m_DepartureTime=  g_read_integer(st);
-			pTrain->m_NodeSize	=  g_read_integer(st);
-			pTrain->m_PreferredArrivalTime =  g_read_integer(st);
-			pTrain->m_ActualTripTime =  g_read_integer(st);
-
-			if(pTrain->m_NodeSize>0)
-			{
-				pTrain->m_aryTN = new STrainNode[pTrain->m_NodeSize];
-
-				for(int i =0; i< pTrain->m_NodeSize; i++)
-				{
-					pTrain->m_aryTN[i].TaskProcessingTime = g_read_integer(st);
-					pTrain->m_aryTN[i].TaskScheduleWaitingTime = g_read_integer(st);
-					pTrain->m_aryTN[i].NodeTimestamp = g_read_integer(st);
-
-					int NodeNumber = g_read_integer(st);
-					pTrain->m_aryTN[i].NodeID = g_NodeNametoIDMap[NodeNumber];
-
-					if(i>=1)
-					{
-						CLink* pLink = g_FindLinkWithNodeIDs(pTrain->m_aryTN[i-1].NodeID , pTrain->m_aryTN[i].NodeID  );
-
-						pTrain->m_aryTN[i].LinkID = pLink->m_LinkID;
-						if(pLink==NULL)
-						{
-							CString msg;
-							msg.Format("train %d's link %d -> %d does not exist",pTrain->m_TrainID ,g_NodeIDtoNameMap[pTrain->m_aryTN[i-1].NodeID],g_NodeIDtoNameMap[pTrain->m_aryTN[i].NodeID]);
-							
-							fclose(st);
-							return false;
-						}
-
-					}
-				}
-			}else
-			{
-				b_Initialized = false;
-			}
-			g_TrainVector.push_back(pTrain);
-
-		}
-
-//		m_TimetableDataLoadingStatus.Format ("%d trains are loaded from file %s.",g_TrainVector.size(),lpszFileName);
-
-		fclose(st);
-
-	}
-
-	return false;
-}
-
-
-
-
 
 bool g_TimetableOptimization_Lagrangian_Method()
 {
 	NetworkForSP* m_pNetwork =NULL;
 
-	int NumberOfIterationsWithMemory = 200;  // this is much greater than -100 when  LR_Iteration = 0, because  LastUseIterationNo is initialized as -100;
+	int NumberOfIterationsWithMemory = 5;  // this is much greater than -100 when  LR_Iteration = 0, because  LastUseIterationNo is initialized as -100;
 
-
-	int OptimizationHorizon = _MAX_OPTIMIZATION_HORIZON;  // we need to dynamically determine the optimization 
+	int OptimizationHorizon = g_OptimizationHorizon;  // we need to dynamically determine the optimization 
 
 
 	std::set<CLink*>::iterator iLink;
 	for (iLink = g_LinkSet.begin(); iLink != g_LinkSet.end(); iLink++)
 	{
-	// reset resource usage counter for each timestamp
+		// reset resource usage counter for each timestamp
 		(*iLink)->ResetResourceAry(OptimizationHorizon);
 	}
 
-	int max_number_of_LR_iterations = 100;
 	// first loop for each LR iteration
-	for(int LR_Iteration = 0; LR_Iteration< max_number_of_LR_iterations; LR_Iteration++)
+	for(int LR_Iteration = 0; LR_Iteration< g_MaxNumberOfLRIterations; LR_Iteration++)
 	{
 
 		TRACE ("Lagrangian Iteration %d", LR_Iteration);
+		cout << "Lagrangian Iteration " << LR_Iteration << endl;
 
 		// step 1. reset resource usage counter for each timestamp
 		for (iLink = g_LinkSet.begin(); iLink != g_LinkSet.end(); iLink++)
@@ -199,14 +80,38 @@ bool g_TimetableOptimization_Lagrangian_Method()
 			{
 				CLink* pLink = g_LinkIDMap[pTrain->m_aryTN[n].LinkID];
 
-				// inside loop for each link traveled by each tran
-				for(int t = pTrain->m_aryTN[n-1].NodeTimestamp; t< pTrain->m_aryTN[n].NodeTimestamp; t++)
+				if(g_CellBasedNetworkFlag == 1)   // cell based representation, only apply to node departure time
 				{
+					// inside loop for each link traveled by each tran
+					for(int t = pTrain->m_aryTN[n-1].NodeArrivalTimestamp-g_SafetyHeadway; t<= pTrain->m_aryTN[n-1].NodeArrivalTimestamp + g_SafetyHeadway; t++)
+					{
+						if(t>=0 && t<OptimizationHorizon)
+						{
+							pLink->m_ResourceAry[t].UsageCount+=1;
+							pLink->m_ResourceAry[t].LastUseIterationNo = LR_Iteration;
 
-					ASSERT(t>=0 && t<OptimizationHorizon);
-					pLink->m_ResourceAry[t].UsageCount+=1;
-					pLink->m_ResourceAry[t].LastUseIterationNo = LR_Iteration;
+							if(pLink->m_ResourceAry[t].UsageCount > pLink->m_LinkCapacity)
+							{
+								TRACE("");
+							}
 
+						}
+
+					}
+				}
+
+				if(g_CellBasedNetworkFlag == 0)  // general capacity constraint
+				{
+					// inside loop for each link traveled by each tran
+					for(int t = pTrain->m_aryTN[n-1].NodeArrivalTimestamp; t<=pTrain->m_aryTN[n].NodeArrivalTimestamp; t++)
+					{
+						if(t>=0 && t<OptimizationHorizon)
+						{
+							pLink->m_ResourceAry[t].UsageCount+=1;
+							pLink->m_ResourceAry[t].LastUseIterationNo = LR_Iteration;
+						}
+
+					}
 				}
 
 			}
@@ -222,23 +127,33 @@ bool g_TimetableOptimization_Lagrangian_Method()
 
 		// step 4. resource pricing algorithm
 		// reset resource usage counter for each timestamp
+
+		bool bFeasibleFlag = true;
 		for (iLink = g_LinkSet.begin(); iLink != g_LinkSet.end(); iLink++)
 		{
 			for(int t=0; t< OptimizationHorizon; t++)
 			{
-				(*iLink)->m_ResourceAry[t].Price  += StepSize*((*iLink)->m_ResourceAry[t].UsageCount - (*iLink)->m_LaneCapacity);
+				if((*iLink)->m_ResourceAry[t].UsageCount > (*iLink)->m_LinkCapacity)
+				{
+					bFeasibleFlag = false;
+					TRACE("\n arc %d --> %d, time %d, capacity is exceeded", (*iLink)->m_FromNodeNumber , (*iLink)->m_ToNodeNumber ,t);
+				}
 
-				//			if((*iLink)->m_ResourceAry[t].Price > 0)
-				//				TRACE("\n arc %d, time %d, price %f", (*iLink)->m_LinkID, t, (*iLink)->m_ResourceAry[t].Price );
+				(*iLink)->m_ResourceAry[t].Price  += StepSize*((*iLink)->m_ResourceAry[t].UsageCount - (*iLink)->m_LinkCapacity);
+
+				if((*iLink)->m_ResourceAry[t].Price > 0)
+					TRACE("\n arc %d --> %d, time %d, price %f", (*iLink)->m_FromNodeNumber , (*iLink)->m_ToNodeNumber ,t, (*iLink)->m_ResourceAry[t].Price );
 
 				// if the total usage (i.e. resource consumption > capacity constraint) 
 				// then the resource price increases, otherwise decrease
 
-				if((*iLink)->m_ResourceAry[t].Price < 0 || LR_Iteration - ((*iLink)->m_ResourceAry[t].LastUseIterationNo) > NumberOfIterationsWithMemory)
+				if((*iLink)->m_ResourceAry[t].Price < 0 || (LR_Iteration - (*iLink)->m_ResourceAry[t].LastUseIterationNo) > NumberOfIterationsWithMemory)
 					(*iLink)->m_ResourceAry[t].Price = 0;
 			}
 		}
 
+		if(bFeasibleFlag == true && LR_Iteration >0 )
+			break;   // feasible solutoin found, exit Lagrangian iteration
 		// step 5. build time-dependent network with resource price
 
 		// here we allocate OptimizationHorizon time and cost labels for each node
@@ -255,9 +170,9 @@ bool g_TimetableOptimization_Lagrangian_Method()
 			//step 6.1 find time-dependent shortest path with resource price label
 			m_pNetwork->BuildSpaceTimeNetworkForTimetabling(&g_NodeSet, &g_LinkSet, pTrain->m_TrainType );
 			//step 6.2 perform shortest path algorithm
-			m_pNetwork->OptimalTDLabelCorrecting_DoubleQueue(pTrain->m_OriginNodeID , pTrain->m_DepartureTime );
+			m_pNetwork->OptimalTDLabelCorrecting_DoubleQueue(pTrain->m_OriginNodeID , pTrain->m_EarlyDepartureTime,pTrain->m_DestinationNodeID , pTrain->m_AllowableSlackAtDeparture, pTrain->m_CostPerUnitTimeStopped );
 			//step 6.3 fetch the train path  solution
-			pTrain->m_NodeSize = m_pNetwork->FindOptimalSolution(pTrain->m_OriginNodeID , pTrain->m_DepartureTime, pTrain->m_DestinationNodeID,pTrain);
+			pTrain->m_NodeSize = m_pNetwork->FindOptimalSolution(pTrain->m_OriginNodeID , pTrain->m_EarlyDepartureTime, pTrain->m_DestinationNodeID,pTrain);
 
 
 			//find the link no along the path
@@ -273,6 +188,33 @@ bool g_TimetableOptimization_Lagrangian_Method()
 
 		}
 
+		//final export to log file at last iteration
+		if(	LR_Iteration+1 == g_MaxNumberOfLRIterations)
+		{
+			for (iLink = g_LinkSet.begin(); iLink != g_LinkSet.end(); iLink++)
+			{
+				int t;
+				for(t=0; t< OptimizationHorizon; t++)
+				{
+					if((*iLink)->m_ResourceAry[t].UsageCount > (*iLink)->m_LinkCapacity)
+					{
+						g_LogFile << "Capacity is exceeded: arc" << (*iLink)->m_FromNodeNumber << "->" <<  (*iLink)->m_ToNodeNumber << ",Time: " << t << endl;
+					}
+				}
+			}
+			for (iLink = g_LinkSet.begin(); iLink != g_LinkSet.end(); iLink++)
+			{
+				int t;
+				for(t=0; t< OptimizationHorizon; t++)
+				{
+					if((*iLink)->m_ResourceAry[t].Price > 0)
+					{
+						g_LogFile << "Price > 0 : arc" << (*iLink)->m_FromNodeNumber << "->" <<  (*iLink)->m_ToNodeNumber << ",Time: " << t << ", Price: " <<(*iLink)->m_ResourceAry[t].Price << endl;
+					}
+				}
+			}
+
+		}
 	}
 
 
@@ -283,121 +225,142 @@ bool g_TimetableOptimization_Lagrangian_Method()
 }
 
 
-
-void g_Initializetimetable()
-{
-	NetworkForSP* m_pNetwork =NULL;
-
-	// this function only find the intial path for each train, and layout the initial (but infeasible timetable)
-	// this is a simplifed version of Lagrangian method without actual resource price
-
-	// we have to estimate the optimization horizion here, as it is used in the shortst path algorithm
-	int OptimizationHorizon = _MAX_OPTIMIZATION_HORIZON;
-
-	std::set<CLink*>::iterator iLink;
-	for (iLink = g_LinkSet.begin(); iLink != g_LinkSet.end(); iLink++)
-	{
-	// reset resource usage counter for each timestamp
-		(*iLink)->ResetResourceAry(OptimizationHorizon);
-	}
-
-	// build time-dependent network with resource price
-
-	// here we allocate OptimizationHorizon time and cost labels for each node
-
-	m_pNetwork = new NetworkForSP(g_NodeSet.size(), g_LinkSet.size(), OptimizationHorizon, 1);  
-
-	unsigned int v;
-	for(v = 0; v<g_TrainVector.size(); v++)
-	{
-
-		CTrain* pTrain = g_TrainVector[v];
-
-		//find time-dependent shortest path with time label
-		m_pNetwork->BuildSpaceTimeNetworkForTimetabling(&g_NodeSet, &g_LinkSet, pTrain->m_TrainType );
-		m_pNetwork->OptimalTDLabelCorrecting_DoubleQueue(pTrain->m_OriginNodeID , pTrain->m_DepartureTime );
-		pTrain->m_NodeSize = m_pNetwork->FindOptimalSolution(pTrain->m_OriginNodeID , pTrain->m_DepartureTime, pTrain->m_DestinationNodeID,pTrain);
-
-
-		for (int i=1; i< pTrain->m_NodeSize ; i++)
-		{
-			CLink* pLink = g_FindLinkWithNodeIDs(pTrain->m_aryTN[i-1].NodeID , pTrain->m_aryTN[i].NodeID  );
-			ASSERT(pLink!=NULL);
-			pTrain->m_aryTN[i].LinkID  = pLink->m_LinkID ;
-
-		}
-
-	}
-	if(m_pNetwork !=NULL)
-		delete m_pNetwork;
-
-}
 bool g_TimetableOptimization_Priority_Rule()
 {
 	// this algorithm schedules a train at a time, and record the use of resource so that the following trains cannot use the previously consumped resource, which leads to a feasible solution
 	// the priority of trains are assumed to be given from the train sequence of the input file timetabl.csv
+
+	int OptimizationHorizon = _MAX_OPTIMIZATION_HORIZON;  // we need to dynamically determine the optimization 
+
 	NetworkForSP* m_pNetwork =NULL;
+		//only allocate once
+			m_pNetwork = new NetworkForSP(g_NodeSet.size(), g_LinkSet.size(), OptimizationHorizon, 1);  
 
-
-	int OptimizationHorizon = _MAX_OPTIMIZATION_HORIZON;
-
-	// step 1. Initialization
 
 	std::set<CLink*>::iterator iLink;
 	for (iLink = g_LinkSet.begin(); iLink != g_LinkSet.end(); iLink++)
 	{
-	// reset resource usage counter for each timestamp
+		// reset resource usage counter for each timestamp
 		(*iLink)->ResetResourceAry(OptimizationHorizon);
 	}
-	// step 2. for each train, record their resource usage on the corresponding link
-	// outer loop: for each train
 
-		m_pNetwork = new NetworkForSP(g_NodeSet.size(), g_LinkSet.size(), OptimizationHorizon, 1);  
-
-		unsigned int v;
-	for(v = 0; v<g_TrainVector.size(); v++)
-	{
-
-		CTrain* pTrain = g_TrainVector[v];
-
-		//find time-dependent shortest path with time label
-		m_pNetwork->BuildSpaceTimeNetworkForTimetabling(&g_NodeSet, &g_LinkSet, pTrain->m_TrainType );
-		m_pNetwork->OptimalTDLabelCorrecting_DoubleQueue(pTrain->m_OriginNodeID , pTrain->m_DepartureTime );
-		pTrain->m_NodeSize = m_pNetwork->FindOptimalSolution(pTrain->m_OriginNodeID , pTrain->m_DepartureTime, pTrain->m_DestinationNodeID,pTrain);
-
-
-		for (int i=1; i< pTrain->m_NodeSize ; i++)
+		// step 1. reset resource usage counter for each timestamp
+		for (iLink = g_LinkSet.begin(); iLink != g_LinkSet.end(); iLink++)
 		{
-			CLink* pLink = g_FindLinkWithNodeIDs(pTrain->m_aryTN[i-1].NodeID , pTrain->m_aryTN[i].NodeID  );
-			ASSERT(pLink!=NULL);
-			pTrain->m_aryTN[i].LinkID  = pLink->m_LinkID ;
-
-		}
-
-		for (int n=1; n< pTrain->m_NodeSize ; n++)
-		{		//for each used timestamp
-			CLink* pLink = g_LinkIDMap[pTrain->m_aryTN[n].LinkID];
-
-		for(int t = pTrain->m_aryTN[n-1].NodeTimestamp; t< pTrain->m_aryTN[n].NodeTimestamp; t++)
-		{
-				ASSERT(t>=0 && t<OptimizationHorizon);
-				pLink->m_ResourceAry[t].UsageCount+=1;
-				// check resource usage counter for each timestamp,
-				if(pLink->m_ResourceAry[t].UsageCount >= pLink->m_LaneCapacity)  //over capacity
-				{
-					pLink->m_ResourceAry[t].Price  = MAX_SPLABEL;  // set the maximum price so the followers cannot use this time
-				}
+			for(int t=0; t< OptimizationHorizon; t++)
+			{
+				(*iLink)->m_ResourceAry[t].UsageCount =0;
 			}
 		}
 
-	}
 
-	if(m_pNetwork !=NULL)
+		// // step 2. for each train, record their resource usage on the corresponding link
+		unsigned int v;
+		for(v = 0; v<g_SimpleTrainDataVector.size(); v++)
+		{
+			CTrain* pTrain = g_TrainVector[g_SimpleTrainDataVector[v].m_TrainNo];
+
+			// step 2.1. build time-dependent network with resource price
+
+			// here we allocate OptimizationHorizon time and cost labels for each node
+
+			//step 2.1 find time-dependent shortest path with resource price label
+			m_pNetwork->BuildSpaceTimeNetworkForTimetabling(&g_NodeSet, &g_LinkSet, pTrain->m_TrainType );
+			//step 2.2 perform shortest path algorithm
+			m_pNetwork->OptimalTDLabelCorrecting_DoubleQueue(pTrain->m_OriginNodeID , pTrain->m_EarlyDepartureTime,pTrain->m_DestinationNodeID , pTrain->m_AllowableSlackAtDeparture, pTrain->m_CostPerUnitTimeStopped );
+			//step 3.3 fetch the train path  solution
+			pTrain->m_NodeSize = m_pNetwork->FindOptimalSolution(pTrain->m_OriginNodeID , pTrain->m_EarlyDepartureTime, pTrain->m_DestinationNodeID,pTrain);
+
+
+			//find the link no along the path
+
+			for (int i=1; i< pTrain->m_NodeSize ; i++)
+			{
+				CLink* pLink = g_FindLinkWithNodeIDs(pTrain->m_aryTN[i-1].NodeID , pTrain->m_aryTN[i].NodeID  );
+				ASSERT(pLink!=NULL);
+				pTrain->m_aryTN[i].LinkID  = pLink->m_LinkID ;
+
+			}
+
+
+			// step 3 record resource usage
+			// start from n=1, as only elements from n=1 to m_NodeSize hold link information, the first node element has no link info
+			for(int n = 1; n< pTrain->m_NodeSize; n++)
+			{
+				CLink* pLink = g_LinkIDMap[pTrain->m_aryTN[n].LinkID];
+
+				if(g_CellBasedNetworkFlag == 1)   // cell based representation, only apply to node departure time
+				{
+					// inside loop for each link traveled by each tran
+					for(int t = pTrain->m_aryTN[n-1].NodeArrivalTimestamp-g_SafetyHeadway; t<= pTrain->m_aryTN[n-1].NodeArrivalTimestamp + g_SafetyHeadway; t++)
+					{
+						if(t>=0 && t<OptimizationHorizon)
+						{
+							pLink->m_ResourceAry[t].UsageCount+=1;
+							pLink->m_ResourceAry[t].LastUseIterationNo = 0;
+
+							if(pLink->m_ResourceAry[t].UsageCount >= pLink->m_LinkCapacity)  //over capacity
+								{
+									pLink->m_ResourceAry[t].Price  = MAX_SPLABEL;  // set the maximum price so the followers cannot use this time
+								}
+
+						}
+
+					}
+				}
+
+				if(g_CellBasedNetworkFlag == 0)  // general capacity constraint
+				{
+					// inside loop for each link traveled by each tran
+					for(int t = pTrain->m_aryTN[n-1].NodeArrivalTimestamp; t<= pTrain->m_aryTN[n].NodeArrivalTimestamp; t++)
+					{
+						if(t>=0 && t<OptimizationHorizon)
+						{
+							pLink->m_ResourceAry[t].UsageCount+=1;
+							pLink->m_ResourceAry[t].LastUseIterationNo = 0;
+
+							if(pLink->m_ResourceAry[t].UsageCount >= pLink->m_LinkCapacity)  //over capacity
+								{
+									pLink->m_ResourceAry[t].Price  = MAX_SPLABEL;  // set the maximum price so the followers cannot use this time
+								}
+
+						}
+
+					}
+				}
+
+			}
+		
+
+
+
+		}
+
+
+		
+
+		//final export to log file at last iteration
+
+			for (iLink = g_LinkSet.begin(); iLink != g_LinkSet.end(); iLink++)
+			{
+				int t;
+				for(t=0; t< OptimizationHorizon; t++)
+				{
+					if((*iLink)->m_ResourceAry[t].UsageCount > (*iLink)->m_LinkCapacity)
+					{
+						g_LogFile << "Capacity is exceeded: arc" << (*iLink)->m_FromNodeNumber << "->" <<  (*iLink)->m_ToNodeNumber << ",Time: " << t << endl;
+					}
+				}
+			}
+
+	if(m_pNetwork !=NULL)     // m_pNetwork is used to calculate time-dependent generalized least cost path 
 		delete m_pNetwork;
 
 	return true;
 
 }
+
+
 
 
 

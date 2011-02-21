@@ -23,8 +23,8 @@ unsigned long GetLinkKey(int FromNodeID, int ToNodeID)
 
 CLink* g_FindLinkWithNodeNumbers(int FromNodeNumber, int ToNodeNumber)
 {
-		int FromNodeID = g_NodeNametoIDMap[FromNodeNumber];
-		int ToNodeID = g_NodeNametoIDMap[ToNodeNumber];
+		int FromNodeID = g_NodeNumbertoIDMap[FromNodeNumber];
+		int ToNodeID = g_NodeNumbertoIDMap[ToNodeNumber];
 
 		unsigned long LinkKey = GetLinkKey( FromNodeID, ToNodeID);
 		return g_NodeIDtoLinkMap[LinkKey];
