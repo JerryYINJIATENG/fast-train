@@ -24,15 +24,25 @@
 //    along with FastTrain.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 extern std::set<CNode*>		g_NodeSet;
-extern std::map<int, CNode*> g_NodeMap;
-extern std::map<int, int> g_NodeIDtoNameMap;
-extern std::map<int, int> g_NodeNametoIDMap;
+extern std::map<int, CNode*> g_NodeIDMap;
+extern std::map<int, int> g_NodeNumbertoIDMap;
+extern std::map<int, int> g_NodeIDToNumberMap;
+
 extern	std::map<unsigned long, CLink*> g_NodeIDtoLinkMap;
 
 
 extern std::set<CLink*>		g_LinkSet;
 extern std::map<int, CLink*> g_LinkIDMap;
 extern std::vector<CTrain*> g_TrainVector;
+extern std::vector<CSimpleTrainData> g_SimpleTrainDataVector;  // for STL sorting
+
+
+extern int g_OptimizationHorizon;
+extern int g_MaxAllowedStopTime;
+extern int g_MaxNumberOfLRIterations;
+extern int g_SafetyHeadway;
+extern int g_NumberOfTrainTypes;
+extern int g_CellBasedNetworkFlag;
 
 
 
@@ -43,7 +53,15 @@ int g_read_integer_with_char_O(FILE* f);
 
 float g_read_float(FILE *f);
 
+unsigned long GetLinkKey(int FromNodeID, int ToNodeID);
 CLink* g_FindLinkWithNodeNumbers(int FromNodeNumber, int ToNodeNumber);
 CLink* g_FindLinkWithNodeIDs(int FromNodeID, int ToNodeID);
 int g_GetPrivateProfileInt( LPCTSTR section, LPCTSTR key, int def_value, LPCTSTR filename);
 float g_GetPrivateProfileFloat( LPCTSTR section, LPCTSTR key, float def_value, LPCTSTR filename);
+void g_ReadTrainProfileCSVFile();
+bool g_ReadTimetableCVSFile();
+bool g_TimetableOptimization_Lagrangian_Method_with_PriorityRules();
+bool g_TimetableOptimization_Lagrangian_Method();
+bool g_ExportTimetableDataToCSVFile();
+bool g_TimetableOptimization_Priority_Rule();
+void g_ExpandNetworkForDoubleTracks();

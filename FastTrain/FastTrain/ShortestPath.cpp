@@ -49,7 +49,8 @@ int  NetworkForSP:: GetLinkNoByNodeIndex(int usn_index, int dsn_index)
 		}
 	}
 
-	cout << " Error in GetLinkNoByNodeIndex " << g_NodeIDtoNameMap[usn_index] << "-> " << g_NodeIDtoNameMap[dsn_index];
+	cout << " Error in GetLinkNoByNodeIndex " ;
+	//<< g_NodeIDtoNameMap[usn_index] << "-> " << g_NodeIDtoNameMap[dsn_index];
 
 	g_ProgramStop();
 
@@ -179,10 +180,15 @@ void NetworkForSP::BuildSpaceTimeNetworkForTimetabling(std::set<CNode*>* p_NodeS
 
 	}
 
-	// add physical links
+	// add physical links or virtucal cell only
 
 	for(iterLink = p_LinkSet->begin(); iterLink != p_LinkSet->end(); iterLink++)
 	{
+
+		if(   (g_CellBasedNetworkFlag == 0&&(*iterLink)->m_PhysicalLinkFlag ==true)
+			|| (g_CellBasedNetworkFlag == 1&&(*iterLink)->m_PhysicalLinkFlag == false ))
+		{
+
 		FromID = (*iterLink)->m_FromNodeID;
 		ToID   = (*iterLink)->m_ToNodeID;
 
@@ -205,27 +211,29 @@ void NetworkForSP::BuildSpaceTimeNetworkForTimetabling(std::set<CNode*>* p_NodeS
 			m_LinkTDTimeAry[(*iterLink)->m_LinkID][t] = (*iterLink)->GetTrainRunningTime(TrainType);  // in the future, we can extend it to time-dependent running time
 			m_LinkTDCostAry[(*iterLink)->m_LinkID][t]=  (*iterLink)->m_ResourceAry[t].Price;  // for all train types
 
-//			TRACE("Time %d, Travel Time %f, Cost %f\n", t,m_LinkTDTimeAry[(*iterLink)->m_LinkID][t] ,m_LinkTDCostAry[(*iterLink)->m_LinkID][t]);
+
+		//TRACE("Time %d, Travel Time %f, Cost %f\n", t,m_LinkTDTimeAry[(*iterLink)->m_LinkID][t] ,m_LinkTDCostAry[(*iterLink)->m_LinkID][t]);
 
 			// use travel time now, should use cost later
 		}
 
-
+		}
 	}
 
 	m_LinkSize = p_LinkSet->size();
 }
 
 
-bool NetworkForSP::OptimalTDLabelCorrecting_DoubleQueue(int origin, int departure_time)
+bool NetworkForSP::OptimalTDLabelCorrecting_DoubleQueue(int origin, int departure_time, int destination, int AllowableSlackAtDeparture, int CostPerUnitTimeStopped)
 // time -dependent label correcting algorithm with deque implementation
 {
 
 	int i;
 	int debug_flag = 0;  // set 1 to debug the detail information
-				if(debug_flag)
-				TRACE("\nCompute shortest path from %d at time %d",origin, departure_time);
+	if(debug_flag)
+				TRACE("\nCompute shortest path from %d at time %d",g_NodeIDToNumberMap[origin], departure_time);
 
+    bool bFeasiblePathFlag  = false;
 
 	if(m_OutboundSizeAry[origin]== 0)
 		return false;
@@ -245,18 +253,16 @@ bool NetworkForSP::OptimalTDLabelCorrecting_DoubleQueue(int origin, int departur
 
 	//	TD_LabelCostAry[origin][departure_time] = 0;
 
-	int AllowedDelayTime  = 0;  // external parameter
 	// Initialization for origin node at the preferred departure time, at departure time, cost = 0, otherwise, the delay at origin node
 
-	//+1 in "departure_time + 1+ AllowedDelayTime" is to allow feasible value for t = departure time
-	for(int t=departure_time; t <departure_time + 1+ AllowedDelayTime; t+=m_OptimizationTimeInveral)
+	//+1 in "departure_time + 1+ MaxAllowedStopTime" is to allow feasible value for t = departure time
+	for(int t=departure_time; t < departure_time + 1+ g_MaxAllowedStopTime; t+=m_OptimizationTimeInveral)
 	{
 		TD_LabelCostAry[origin][t]= t-departure_time;
 	}
 
 	SEList_clear();
 	SEList_push_front(origin);
-
 
 
 	while(!SEList_empty())
@@ -268,7 +274,7 @@ bool NetworkForSP::OptimalTDLabelCorrecting_DoubleQueue(int origin, int departur
 		NodeStatusAry[FromID] = 2;        //scaned
 
 		//scan all outbound nodes of the current node
-		for(i=0; i<m_OutboundSizeAry[FromID];  i++)  // for each arc (i,j) belong A(j)
+		for(i=0; i<m_OutboundSizeAry[FromID];  i++)  // for each arc (i,j) belong A(i)
 		{
 			int LinkNo = m_OutboundLinkAry[FromID][i];
 			int ToID = m_OutboundNodeAry[FromID][i];
@@ -276,19 +282,28 @@ bool NetworkForSP::OptimalTDLabelCorrecting_DoubleQueue(int origin, int departur
 			if(ToID == origin)  // remove possible loop back to the origin
 				continue;
 
+
 			if(debug_flag)
-				TRACE("\nScan from node %d to node %d",FromID,ToID);
+				TRACE("\nScan from node %d to node %d",g_NodeIDToNumberMap[FromID],g_NodeIDToNumberMap[ToID]);
+
+					int MaxAllowedStopTime = 0;
+					if(FromID == origin)
+						MaxAllowedStopTime = AllowableSlackAtDeparture;
+
+					if(g_LinkIDMap[LinkNo]->m_PhysicalLinkFlag == false && g_LinkIDMap[LinkNo]->m_FromNodeNumber >=MAX_PHYSICAL_NODE_NUMBER)
+						MaxAllowedStopTime = 0;
+					else
+						MaxAllowedStopTime = g_MaxAllowedStopTime;
 
 			// for each time step, starting from the departure time
 			for(int t=departure_time; t <m_OptimizationHorizon; t+=m_OptimizationTimeInveral)
 			{
 				if(TD_LabelCostAry[FromID][t]<MAX_SPLABEL-1)  // for feasible time-space point only
-				{
-
-					for(int time_delay = 0; time_delay <=AllowedDelayTime; time_delay++)
+				{   
+					for(int time_stopped = 0; time_stopped <= MaxAllowedStopTime; time_stopped++)
 					{
-						int NewToNodeArrivalTime	 = (int)(t + m_LinkTDTimeAry[LinkNo][t] + time_delay);  // time-dependent travel times for different train type
-						float NewCost  =  TD_LabelCostAry[FromID][t] + m_LinkTDCostAry[LinkNo][t] + m_LinkTDTimeAry[LinkNo][t];
+						int NewToNodeArrivalTime	 = (int)(t + time_stopped + m_LinkTDTimeAry[LinkNo][t]);  // time-dependent travel times for different train type
+						float NewCost  =  TD_LabelCostAry[FromID][t] + m_LinkTDTimeAry[LinkNo][t] + m_LinkTDCostAry[LinkNo][t] + time_stopped*CostPerUnitTimeStopped;
 						// costs come from time-dependent resource price or road toll
 
 						if(NewToNodeArrivalTime > (m_OptimizationHorizon -1))  // prevent out of bound error
@@ -296,6 +311,10 @@ bool NetworkForSP::OptimalTDLabelCorrecting_DoubleQueue(int origin, int departur
 
 						if(NewCost < TD_LabelCostAry[ToID][NewToNodeArrivalTime] ) // we only compare cost at the downstream node ToID at the new arrival time t
 						{
+
+							if(ToID == destination)
+							bFeasiblePathFlag = true; 
+
 
 							if(debug_flag)
 								TRACE("\n         UPDATE to %f, link cost %f at time %d", NewCost, m_LinkTDCostAry[LinkNo][t],NewToNodeArrivalTime);
@@ -326,8 +345,12 @@ bool NetworkForSP::OptimalTDLabelCorrecting_DoubleQueue(int origin, int departur
 
 		}      // end of for each link
 
-	} // end of while
-	return true;
+	}	// end of while
+
+
+	ASSERT(bFeasiblePathFlag);
+
+	return bFeasiblePathFlag;
 }
 
 
@@ -363,7 +386,7 @@ int NetworkForSP::FindOptimalSolution(int origin, int departure_time, int destin
 
 	//record the first node backward, destination node
 	tmp_AryTN[NodeSize].NodeID = destination;
-	tmp_AryTN[NodeSize].NodeTimestamp = min_cost_time_index;
+	tmp_AryTN[NodeSize].NodeArrivalTimestamp = min_cost_time_index;
 
 	NodeSize++;
 
@@ -375,7 +398,7 @@ int NetworkForSP::FindOptimalSolution(int origin, int departure_time, int destin
 		ASSERT(NodeSize< MAX_NODE_SIZE_IN_A_PATH-1);
 
 		tmp_AryTN[NodeSize].NodeID = PredNode;
-		tmp_AryTN[NodeSize].NodeTimestamp = PredTime;
+		tmp_AryTN[NodeSize].NodeArrivalTimestamp = PredTime;
 
 		NodeSize++;
 
@@ -389,7 +412,7 @@ int NetworkForSP::FindOptimalSolution(int origin, int departure_time, int destin
 	}
 
 	tmp_AryTN[NodeSize].NodeID = origin;
-	tmp_AryTN[NodeSize].NodeTimestamp = departure_time;
+	tmp_AryTN[NodeSize].NodeArrivalTimestamp = departure_time;
 	NodeSize++;
 
 	// step 3: reverse the backward solution
@@ -399,13 +422,31 @@ int NetworkForSP::FindOptimalSolution(int origin, int departure_time, int destin
 
 	pTrain->m_aryTN = new STrainNode[NodeSize];
 
-	for(int i = 0; i< NodeSize; i++)
+
+	int i;
+	for(i = 0; i< NodeSize; i++)
 	{
 		pTrain->m_aryTN[i].NodeID			= tmp_AryTN[NodeSize-1-i].NodeID;
-		pTrain->m_aryTN[i].NodeTimestamp	= tmp_AryTN[NodeSize-1-i].NodeTimestamp;
+		pTrain->m_aryTN[i].NodeArrivalTimestamp	= tmp_AryTN[NodeSize-1-i].NodeArrivalTimestamp;
 	}
 
-	pTrain->m_ActualTripTime = pTrain->m_aryTN[NodeSize-1].NodeTimestamp - pTrain->m_DepartureTime ;
+	for(i = 0; i< NodeSize; i++)
+	{
+		if(i == NodeSize-1)  // destination
+			pTrain->m_aryTN[i].NodeDepartureTimestamp	= pTrain->m_aryTN[i].NodeArrivalTimestamp;
+		else
+		{
+			CLink* pLink = g_FindLinkWithNodeIDs(pTrain->m_aryTN[i].NodeID , pTrain->m_aryTN[i+1].NodeID  );
+			ASSERT(pLink!=NULL);
+			pTrain->m_aryTN[i].LinkID  = pLink->m_LinkID ;
+
+			int LinkTravelTime = pLink->GetTrainRunningTime ( pTrain->m_TrainType );
+			pTrain->m_aryTN[i].NodeDepartureTimestamp	= pTrain->m_aryTN[i+1].NodeArrivalTimestamp - LinkTravelTime ;
+		}
+
+	}
+
+	pTrain->m_ActualTripTime = pTrain->m_aryTN[NodeSize-1].NodeArrivalTimestamp - pTrain->m_EarlyDepartureTime ;
 
 	return NodeSize;
 }
