@@ -38,7 +38,6 @@ CTime g_AppStartTime;
 
 int g_OptimizationMethod = 0;   //0: Priority rule, //1: Lagrangian relaxation method
 
-int g_MaxAllowedStopTime =  120; // in min
 int g_MaxNumberOfLRIterations = 50;
 int g_SafetyHeadway = 2;
 int g_NumberOfTrainTypes=1;
@@ -277,6 +276,7 @@ void CreateCell(int FromNodeNumber, int ToNodeNumber, CLink* pLink , int CellNo)
 			if(pLink->m_FreeRuningTimeAry[type] < MAX_TRAIN_RUNNING_TIME )
 			{
 				pCell->m_FreeRuningTimeAry[type] = int(CellNo*1.0/pLink->m_MinRunningTime*pLink->m_FreeRuningTimeAry[type]+0.5) - int((CellNo-1)*1.0/pLink->m_MinRunningTime*pLink->m_FreeRuningTimeAry[type]+0.5);
+				pCell->m_MaxWaitingTimeAry[type] = 0;
 
 				g_LogFile << "RT (" << type << ")" << pCell->m_FreeRuningTimeAry[type] << ";";
 
@@ -391,7 +391,9 @@ void g_ReadTrainProfileCSVFile()
 			{
 				int TrainType = g_read_integer(st);
 				int TrainRunningTime = g_read_integer(st);
+				int TrainMaxWaitingTime = g_read_integer(st);
 				pLink->m_FreeRuningTimeAry[TrainType] = TrainRunningTime;
+				pLink->m_MaxWaitingTimeAry [TrainType] = TrainMaxWaitingTime;
 
 				if(TrainType==1)
 					g_TotalFreeRunningTime+= TrainRunningTime;
@@ -564,7 +566,6 @@ void g_ReadSchedulingSettings()
 
 	g_OptimizationMethod = g_GetPrivateProfileInt("optimization", "method", 0, IniFilePath_FT);	
 	g_OptimizationHorizon= g_GetPrivateProfileInt("optimization", "optimization_horizon", 1440, IniFilePath_FT);	
-	g_MaxAllowedStopTime = g_GetPrivateProfileInt("optimization", "allowed_train_delay_time_in_min", 120, IniFilePath_FT);	
 	g_MaxNumberOfLRIterations = g_GetPrivateProfileInt("optimization", "max_num_of_LR_iterations", 2, IniFilePath_FT);	
 	g_SafetyHeadway = g_GetPrivateProfileInt("optimization", "safety_time_headway", 2, IniFilePath_FT);
 	g_CellBasedNetworkFlag = g_GetPrivateProfileInt("optimization", "cell_based_network", 0, IniFilePath_FT);
@@ -602,7 +603,7 @@ bool g_ExportTimetableDataToCSVFile()
 			}
 
 			fprintf(st,"%d,%d,%d,%d,%d,%d,%d\n", pTrain->m_TrainID , pTrain->m_TrainType ,g_NodeIDToNumberMap [pTrain->m_OriginNodeID] ,g_NodeIDToNumberMap[pTrain->m_DestinationNodeID ],pTrain->m_EarlyDepartureTime ,
-				number_of_physical_nodes*2,pTrain->m_ActualTripTime);
+				number_of_physical_nodes,pTrain->m_ActualTripTime);
 
 			for( n = 0; n< pTrain->m_NodeSize; n++)
 			{
@@ -610,7 +611,6 @@ bool g_ExportTimetableDataToCSVFile()
 				if(g_NodeIDToNumberMap[NodeID]<MAX_PHYSICAL_NODE_NUMBER || bOutputAllNodes)
 				{
 				fprintf(st,",,,,,,,,%d,%d,%5.2f\n", g_NodeIDToNumberMap[NodeID], pTrain->m_aryTN[n].NodeArrivalTimestamp,g_NodeIDMap[NodeID]->m_SpacePosition);
-				fprintf(st,",,,,,,,,%d,%d,%5.2f\n", g_NodeIDToNumberMap[NodeID], pTrain->m_aryTN[n].NodeDepartureTimestamp,g_NodeIDMap[NodeID]->m_SpacePosition);
 				}
 
 			}
