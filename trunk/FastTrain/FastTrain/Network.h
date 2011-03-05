@@ -173,6 +173,8 @@ public:
 		for(int type = 0; type < MAX_TRAIN_TYPE; type++)
 		{
 		m_FreeRuningTimeAry[type] = MAX_TRAIN_RUNNING_TIME;
+		m_MaxWaitingTimeAry[type] = 0;
+
 		}
 	};
 
@@ -204,6 +206,7 @@ public:
 
 	//for timetabling use
 	int m_FreeRuningTimeAry[MAX_TRAIN_TYPE];  //indexed by train type
+	int m_MaxWaitingTimeAry[MAX_TRAIN_TYPE];  //indexed by train type
 
 	int GetTrainRunningTime(int TrainType)
 	{
@@ -211,6 +214,11 @@ public:
 			return 600;  // use a default value in case user inputs lane capacity as zero
 
 		return m_FreeRuningTimeAry[TrainType];
+	}
+
+	int GetTrainMaxWaitingTime(int TrainType)
+	{
+		return m_MaxWaitingTimeAry[TrainType];
 	}
 
 	GDPoint m_FromPoint, m_ToPoint;
@@ -357,6 +365,7 @@ public:
 
 	float** m_LinkTDTimeAry;
 	float** m_LinkTDCostAry;
+	float* m_LinkTDMaxWaitingTimeAry;
 
 	int* NodeStatusAry;                // Node status array used in KSP;
 
@@ -396,6 +405,8 @@ public:
 
 		m_OptimizationIntervalSize = int(m_OptimizationHorizon/m_OptimizationTimeInveral+0.1);  // make sure there is no rounding error
 		m_LinkTDTimeAry   =  AllocateDynamicArray<float>(m_LinkSize,m_OptimizationIntervalSize);
+		m_LinkTDMaxWaitingTimeAry    =  new float[m_LinkSize];
+
 		m_LinkTDCostAry   =  AllocateDynamicArray<float>(m_LinkSize,m_OptimizationIntervalSize);
 
 		m_FromIDAry = new int[m_LinkSize];
@@ -484,7 +495,11 @@ public:
 
 		if(m_LinkList) delete m_LinkList;
 
+		if(m_LinkTDMaxWaitingTimeAry)
+			delete m_LinkTDMaxWaitingTimeAry;
+
 		DeallocateDynamicArray<float>(m_LinkTDTimeAry,m_LinkSize,m_OptimizationIntervalSize);
+   
 		DeallocateDynamicArray<float>(m_LinkTDCostAry,m_LinkSize,m_OptimizationIntervalSize);
 
 		DeallocateDynamicArray<float>(TD_LabelCostAry,m_NodeSize,m_OptimizationIntervalSize);

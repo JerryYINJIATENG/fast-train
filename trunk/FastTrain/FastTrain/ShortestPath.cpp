@@ -206,6 +206,8 @@ void NetworkForSP::BuildSpaceTimeNetworkForTimetabling(std::set<CNode*>* p_NodeS
 //		TRACE("------Link %d->%d:\n",FromID,ToID);
 		ASSERT(m_AdjLinkSize > m_OutboundSizeAry[FromID]);
 
+		m_LinkTDMaxWaitingTimeAry[(*iterLink)->m_LinkID] = (*iterLink)->GetTrainMaxWaitingTime (TrainType);  // in the future, we can extend it to time-dependent running time
+
 		for(t=0; t <m_OptimizationHorizon; t+=m_OptimizationTimeInveral)
 		{
 			m_LinkTDTimeAry[(*iterLink)->m_LinkID][t] = (*iterLink)->GetTrainRunningTime(TrainType);  // in the future, we can extend it to time-dependent running time
@@ -256,7 +258,8 @@ bool NetworkForSP::OptimalTDLabelCorrecting_DoubleQueue(int origin, int departur
 	// Initialization for origin node at the preferred departure time, at departure time, cost = 0, otherwise, the delay at origin node
 
 	//+1 in "departure_time + 1+ MaxAllowedStopTime" is to allow feasible value for t = departure time
-	for(int t=departure_time; t < departure_time + 1+ g_MaxAllowedStopTime; t+=m_OptimizationTimeInveral)
+	// let us assume we wait for 120 minutes
+	for(int t=departure_time; t < departure_time + 1+ 120; t+=m_OptimizationTimeInveral)
 	{
 		TD_LabelCostAry[origin][t]= t-departure_time;
 	}
@@ -286,14 +289,8 @@ bool NetworkForSP::OptimalTDLabelCorrecting_DoubleQueue(int origin, int departur
 			if(debug_flag)
 				TRACE("\nScan from node %d to node %d",g_NodeIDToNumberMap[FromID],g_NodeIDToNumberMap[ToID]);
 
-					int MaxAllowedStopTime = 0;
-					if(FromID == origin)
-						MaxAllowedStopTime = AllowableSlackAtDeparture;
+					int MaxAllowedStopTime = m_LinkTDMaxWaitingTimeAry[LinkNo];
 
-					if(g_LinkIDMap[LinkNo]->m_PhysicalLinkFlag == false && g_LinkIDMap[LinkNo]->m_FromNodeNumber >=MAX_PHYSICAL_NODE_NUMBER)
-						MaxAllowedStopTime = 0;
-					else
-						MaxAllowedStopTime = g_MaxAllowedStopTime;
 
 			// for each time step, starting from the departure time
 			for(int t=departure_time; t <m_OptimizationHorizon; t+=m_OptimizationTimeInveral)
