@@ -258,8 +258,7 @@ bool NetworkForSP::OptimalTDLabelCorrecting_DoubleQueue(int origin, int departur
 	// Initialization for origin node at the preferred departure time, at departure time, cost = 0, otherwise, the delay at origin node
 
 	//+1 in "departure_time + 1+ MaxAllowedStopTime" is to allow feasible value for t = departure time
-	// let us assume we wait for 120 minutes
-	for(int t=departure_time; t < departure_time + 1+ 120; t+=m_OptimizationTimeInveral)
+	for(int t=departure_time; t < departure_time + 1+ AllowableSlackAtDeparture; t+=m_OptimizationTimeInveral)
 	{
 		TD_LabelCostAry[origin][t]= t-departure_time;
 	}
@@ -351,7 +350,7 @@ bool NetworkForSP::OptimalTDLabelCorrecting_DoubleQueue(int origin, int departur
 }
 
 
-int NetworkForSP::FindOptimalSolution(int origin, int departure_time, int destination, CTrain* pTrain)  // the last pointer is used to get the node array
+int NetworkForSP::FindOptimalSolution(int origin, int departure_time, int destination, CTrain* pTrain, float& TripPrice)  // the last pointer is used to get the node array
 {
 
 	// step 1: scan all the time label at destination node, consider time cost
@@ -374,6 +373,8 @@ int NetworkForSP::FindOptimalSolution(int origin, int departure_time, int destin
 		}
 
 	}
+		
+	TripPrice = min_cost;  // this is the trip price including travel time and all resource price consumed by this train
 
 	ASSERT(min_cost_time_index>0); // if min_cost_time_index ==-1, then no feasible path if founded
 
