@@ -526,7 +526,7 @@ public:
 	//these two functions are for timetabling
 	bool OptimalTDLabelCorrecting_DoubleQueue(int origin, int departure_time, int destination, int AllowableSlackAtDeparture, int CostPerUnitTimeStopped);
 	// optimal version use a time-node-dimension of TD_LabelCostAry, TD_NodePredAry
-    int FindOptimalSolution(int origin,  int departure_time,  int destination, CTrain* pTrain);
+    int FindOptimalSolution(int origin,  int departure_time,  int destination, CTrain* pTrain, float& TripPrice);
 	// return node arrary from origin to destination, return travelling timestamp at each node
 	// return number_of_nodes in path
 

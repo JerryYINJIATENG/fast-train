@@ -44,7 +44,6 @@ bool g_TimetableOptimization_Lagrangian_Method()
 
 	int OptimizationHorizon = g_OptimizationHorizon;  // we need to dynamically determine the optimization 
 
-
 	std::set<CLink*>::iterator iLink;
 	for (iLink = g_LinkSet.begin(); iLink != g_LinkSet.end(); iLink++)
 	{
@@ -162,6 +161,9 @@ bool g_TimetableOptimization_Lagrangian_Method()
 			m_pNetwork = new NetworkForSP(g_NodeSet.size(), g_LinkSet.size(), OptimizationHorizon, 1);  
 
 		// step 6. for each train (of the subproblem), find the subprogram solution (time-dependent path) so we know its path and timetable
+		float TotalTripPrice = 0;
+		float TotalTravelTime = 0;
+		
 		for(v = 0; v<g_TrainVector.size(); v++)
 		{
 
@@ -172,7 +174,10 @@ bool g_TimetableOptimization_Lagrangian_Method()
 			//step 6.2 perform shortest path algorithm
 			m_pNetwork->OptimalTDLabelCorrecting_DoubleQueue(pTrain->m_OriginNodeID , pTrain->m_EarlyDepartureTime,pTrain->m_DestinationNodeID , pTrain->m_AllowableSlackAtDeparture, pTrain->m_CostPerUnitTimeStopped );
 			//step 6.3 fetch the train path  solution
-			pTrain->m_NodeSize = m_pNetwork->FindOptimalSolution(pTrain->m_OriginNodeID , pTrain->m_EarlyDepartureTime, pTrain->m_DestinationNodeID,pTrain);
+			float TripPrice  = 0;
+			pTrain->m_NodeSize = m_pNetwork->FindOptimalSolution(pTrain->m_OriginNodeID , pTrain->m_EarlyDepartureTime, pTrain->m_DestinationNodeID,pTrain,TripPrice);
+			TotalTripPrice += TripPrice;
+			TotalTravelTime += pTrain->m_ActualTripTime;
 
 
 			//find the link no along the path
@@ -188,6 +193,19 @@ bool g_TimetableOptimization_Lagrangian_Method()
 
 		}
 
+			float TotalResourcePrice = 0;
+			for (iLink = g_LinkSet.begin(); iLink != g_LinkSet.end(); iLink++)
+			{
+				int t;
+				for(t=0; t< OptimizationHorizon; t++)
+				{
+					TotalResourcePrice += (*iLink)->m_ResourceAry[t].Price ;
+				}
+
+			}
+
+			g_LogFile << "Iteration: " << LR_Iteration << ",Total Travel Time:" << TotalTravelTime << "Total Trip Price:"<< TotalTripPrice << ",Total Resource Price: " << TotalResourcePrice << ",Total Price:" << TotalTripPrice-TotalResourcePrice << endl;
+
 		//final export to log file at last iteration
 		if(	LR_Iteration+1 == g_MaxNumberOfLRIterations)
 		{
@@ -198,10 +216,12 @@ bool g_TimetableOptimization_Lagrangian_Method()
 				{
 					if((*iLink)->m_ResourceAry[t].UsageCount > (*iLink)->m_LinkCapacity)
 					{
-						g_LogFile << "Capacity is exceeded: arc" << (*iLink)->m_FromNodeNumber << "->" <<  (*iLink)->m_ToNodeNumber << ",Time: " << t << endl;
+						g_LogFile << "Capacity is exceeded: Link" << (*iLink)->m_FromNodeNumber << "->" <<  (*iLink)->m_ToNodeNumber << ",Time: " << t <<", Usage Counter = " <<(*iLink)->m_ResourceAry[t].UsageCount << ", Capacity = " << (*iLink)->m_LinkCapacity<< endl;
 					}
 				}
 			}
+
+			float TotalPrice = 0;
 			for (iLink = g_LinkSet.begin(); iLink != g_LinkSet.end(); iLink++)
 			{
 				int t;
@@ -209,10 +229,13 @@ bool g_TimetableOptimization_Lagrangian_Method()
 				{
 					if((*iLink)->m_ResourceAry[t].Price > 0)
 					{
-						g_LogFile << "Price > 0 : arc" << (*iLink)->m_FromNodeNumber << "->" <<  (*iLink)->m_ToNodeNumber << ",Time: " << t << ", Price: " <<(*iLink)->m_ResourceAry[t].Price << endl;
+						g_LogFile << "Price > 0 : arc" << (*iLink)->m_FromNodeNumber << "->" <<  (*iLink)->m_ToNodeNumber << ",Time: " << t << ", Price: " <<(*iLink)->m_ResourceAry[t].Price  <<", Usage Counter = " <<(*iLink)->m_ResourceAry[t].UsageCount << ", Capacity = " << (*iLink)->m_LinkCapacity<< endl;
+
 					}
 				}
 			}
+
+						g_LogFile << "Total Lagrangian price = " << TotalPrice << endl;
 
 		}
 	}
@@ -236,6 +259,8 @@ bool g_TimetableOptimization_Priority_Rule()
 		//only allocate once
 			m_pNetwork = new NetworkForSP(g_NodeSet.size(), g_LinkSet.size(), OptimizationHorizon, 1);  
 
+	float TotalTripPrice  = 0;
+
 
 	std::set<CLink*>::iterator iLink;
 	for (iLink = g_LinkSet.begin(); iLink != g_LinkSet.end(); iLink++)
@@ -258,7 +283,7 @@ bool g_TimetableOptimization_Priority_Rule()
 		unsigned int v;
 		for(v = 0; v<g_SimpleTrainDataVector.size(); v++)
 		{
-			CTrain* pTrain = g_TrainVector[g_SimpleTrainDataVector[v].m_TrainNo];
+			CTrain* pTrain = g_TrainVector[v];
 
 			// step 2.1. build time-dependent network with resource price
 
@@ -269,7 +294,9 @@ bool g_TimetableOptimization_Priority_Rule()
 			//step 2.2 perform shortest path algorithm
 			m_pNetwork->OptimalTDLabelCorrecting_DoubleQueue(pTrain->m_OriginNodeID , pTrain->m_EarlyDepartureTime,pTrain->m_DestinationNodeID , pTrain->m_AllowableSlackAtDeparture, pTrain->m_CostPerUnitTimeStopped );
 			//step 3.3 fetch the train path  solution
-			pTrain->m_NodeSize = m_pNetwork->FindOptimalSolution(pTrain->m_OriginNodeID , pTrain->m_EarlyDepartureTime, pTrain->m_DestinationNodeID,pTrain);
+			float TripPrice = 0;
+			pTrain->m_NodeSize = m_pNetwork->FindOptimalSolution(pTrain->m_OriginNodeID , pTrain->m_EarlyDepartureTime, pTrain->m_DestinationNodeID,pTrain,TripPrice);
+			TotalTripPrice+=TripPrice;
 
 
 			//find the link no along the path
@@ -336,8 +363,7 @@ bool g_TimetableOptimization_Priority_Rule()
 
 		}
 
-
-		
+	
 
 		//final export to log file at last iteration
 
@@ -348,10 +374,14 @@ bool g_TimetableOptimization_Priority_Rule()
 				{
 					if((*iLink)->m_ResourceAry[t].UsageCount > (*iLink)->m_LinkCapacity)
 					{
-						g_LogFile << "Capacity is exceeded: arc" << (*iLink)->m_FromNodeNumber << "->" <<  (*iLink)->m_ToNodeNumber << ",Time: " << t << endl;
+						g_LogFile << "Error still exist in priority rule-based method: Capacity is exceeded: arc" << (*iLink)->m_FromNodeNumber << "->" <<  (*iLink)->m_ToNodeNumber << ",Time: " << t << endl;
 					}
 				}
 			}
+
+				g_LogFile << "Total Trip Price (Upper bound) = " << TotalTripPrice << endl;
+
+
 
 	if(m_pNetwork !=NULL)     // m_pNetwork is used to calculate time-dependent generalized least cost path 
 		delete m_pNetwork;

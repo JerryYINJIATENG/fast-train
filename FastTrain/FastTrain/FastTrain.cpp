@@ -577,11 +577,17 @@ bool g_ExportTimetableDataToCSVFile()
 	FILE* st;
 	fopen_s(&st,"output_timetable.csv","w");
 
-	bool bOutputAllNodes = g_CellBasedOutputFlag;
+
+	bool bOutputAllNodes = (bool)(g_CellBasedOutputFlag);
 
 	if(st!=NULL)
 	{
 		fprintf(st, "train ID,train type,origin,destination,departure time,# of nodes, actual trip time,,node, time_stemp, node_position\n");
+		g_LogFile << " ----------------" <<  endl;
+
+		g_LogFile << "train ID,train type,origin,destination,departure time,# of nodes, actual trip time" <<  endl;
+
+		float TotalTripTime = 0;
 
 		for(unsigned int v = 0; v<g_TrainVector.size(); v++)
 		{
@@ -589,6 +595,7 @@ bool g_ExportTimetableDataToCSVFile()
 			CTrain* pTrain = g_TrainVector[v];
 
 			pTrain->m_ActualTripTime = pTrain->m_aryTN[pTrain->m_NodeSize -1].NodeArrivalTimestamp - pTrain->m_aryTN[0].NodeArrivalTimestamp;
+
 
 			int n;
 			int number_of_physical_nodes = 0;
@@ -605,6 +612,10 @@ bool g_ExportTimetableDataToCSVFile()
 			fprintf(st,"%d,%d,%d,%d,%d,%d,%d\n", pTrain->m_TrainID , pTrain->m_TrainType ,g_NodeIDToNumberMap [pTrain->m_OriginNodeID] ,g_NodeIDToNumberMap[pTrain->m_DestinationNodeID ],pTrain->m_EarlyDepartureTime ,
 				number_of_physical_nodes,pTrain->m_ActualTripTime);
 
+			g_LogFile << pTrain->m_TrainID << ", "<< pTrain->m_TrainType<< ", " << g_NodeIDToNumberMap [pTrain->m_OriginNodeID] << ", "<< g_NodeIDToNumberMap[pTrain->m_DestinationNodeID ] << ", "<< pTrain->m_EarlyDepartureTime << ", "<< number_of_physical_nodes << ", "<< pTrain->m_ActualTripTime <<  endl;
+
+			TotalTripTime += pTrain->m_ActualTripTime ;
+
 			for( n = 0; n< pTrain->m_NodeSize; n++)
 			{
 				int NodeID = pTrain->m_aryTN[n].NodeID;
@@ -617,6 +628,9 @@ bool g_ExportTimetableDataToCSVFile()
 		}
 
 		fclose(st);
+
+		g_LogFile << "Total Trip Time =" << TotalTripTime << ",Avg Trip Time = " << TotalTripTime / max(1,g_TrainVector.size()) <<  endl;
+
 		return true;
 	}else
 	{
