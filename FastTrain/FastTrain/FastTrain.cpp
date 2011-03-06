@@ -39,6 +39,7 @@ CTime g_AppStartTime;
 int g_OptimizationMethod = 0;   //0: Priority rule, //1: Lagrangian relaxation method
 
 int g_MaxNumberOfLRIterations = 50;
+int g_MaxNumberOfFeasibilityPenaltyIterations = 20;
 int g_SafetyHeadway = 2;
 int g_NumberOfTrainTypes=1;
 int g_CellBasedNetworkFlag = 0;
@@ -566,7 +567,8 @@ void g_ReadSchedulingSettings()
 
 	g_OptimizationMethod = g_GetPrivateProfileInt("optimization", "method", 0, IniFilePath_FT);	
 	g_OptimizationHorizon= g_GetPrivateProfileInt("optimization", "optimization_horizon", 1440, IniFilePath_FT);	
-	g_MaxNumberOfLRIterations = g_GetPrivateProfileInt("optimization", "max_num_of_LR_iterations", 2, IniFilePath_FT);	
+	g_MaxNumberOfLRIterations = g_GetPrivateProfileInt("optimization", "max_num_of_LR_iterations", 20, IniFilePath_FT);	
+	g_MaxNumberOfFeasibilityPenaltyIterations = g_GetPrivateProfileInt("optimization", "max_num_of_iterations_to_adding_feasiblity_penalty", 30, IniFilePath_FT);	
 	g_SafetyHeadway = g_GetPrivateProfileInt("optimization", "safety_time_headway", 2, IniFilePath_FT);
 	g_CellBasedNetworkFlag = g_GetPrivateProfileInt("optimization", "cell_based_network", 0, IniFilePath_FT);
 	g_CellBasedOutputFlag =  g_GetPrivateProfileInt("optimization", "cell_based_output", 0, IniFilePath_FT);

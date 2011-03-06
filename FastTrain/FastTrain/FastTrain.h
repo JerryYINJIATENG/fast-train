@@ -39,6 +39,7 @@ extern std::vector<CSimpleTrainData> g_SimpleTrainDataVector;  // for STL sortin
 
 extern int g_OptimizationHorizon;
 extern int g_MaxNumberOfLRIterations;
+extern int g_MaxNumberOfFeasibilityPenaltyIterations;
 extern int g_SafetyHeadway;
 extern int g_NumberOfTrainTypes;
 extern int g_CellBasedNetworkFlag;
