@@ -52,7 +52,7 @@ bool g_TimetableOptimization_Lagrangian_Method()
 	}
 
 	// first loop for each LR iteration
-	for(int LR_Iteration = 0; LR_Iteration< g_MaxNumberOfLRIterations; LR_Iteration++)
+	for(int LR_Iteration = 0; LR_Iteration< g_MaxNumberOfLRIterations + g_MaxNumberOfFeasibilityPenaltyIterations; LR_Iteration++)
 	{
 
 		TRACE ("Lagrangian Iteration %d", LR_Iteration);
@@ -124,6 +124,7 @@ bool g_TimetableOptimization_Lagrangian_Method()
 			StepSize = 0.05f;   
 
 
+
 		// step 4. resource pricing algorithm
 		// reset resource usage counter for each timestamp
 
@@ -135,10 +136,21 @@ bool g_TimetableOptimization_Lagrangian_Method()
 				if((*iLink)->m_ResourceAry[t].UsageCount > (*iLink)->m_LinkCapacity)
 				{
 					bFeasibleFlag = false;
-					TRACE("\n arc %d --> %d, time %d, capacity is exceeded", (*iLink)->m_FromNodeNumber , (*iLink)->m_ToNodeNumber ,t);
+//					TRACE("\n arc %d --> %d, time %d, capacity is exceeded", (*iLink)->m_FromNodeNumber , (*iLink)->m_ToNodeNumber ,t);
 				}
 
+		if(LR_Iteration < g_MaxNumberOfLRIterations)
+		{
 				(*iLink)->m_ResourceAry[t].Price  += StepSize*((*iLink)->m_ResourceAry[t].UsageCount - (*iLink)->m_LinkCapacity);
+		}else 
+		{   //adding feasiblity panality
+				
+			if((*iLink)->m_ResourceAry[t].UsageCount > (*iLink)->m_LinkCapacity)
+			{
+				(*iLink)->m_ResourceAry[t].Price  += StepSize*((*iLink)->m_ResourceAry[t].UsageCount - (*iLink)->m_LinkCapacity);
+			}
+
+		}
 
 				if((*iLink)->m_ResourceAry[t].Price > 0)
 					TRACE("\n arc %d --> %d, time %d, price %f", (*iLink)->m_FromNodeNumber , (*iLink)->m_ToNodeNumber ,t, (*iLink)->m_ResourceAry[t].Price );
@@ -151,8 +163,6 @@ bool g_TimetableOptimization_Lagrangian_Method()
 			}
 		}
 
-		if(bFeasibleFlag == true && LR_Iteration >0 )
-			break;   // feasible solutoin found, exit Lagrangian iteration
 		// step 5. build time-dependent network with resource price
 
 		// here we allocate OptimizationHorizon time and cost labels for each node
@@ -207,8 +217,10 @@ bool g_TimetableOptimization_Lagrangian_Method()
 			g_LogFile << "Iteration: " << LR_Iteration << ",Total Travel Time:" << TotalTravelTime << "Total Trip Price:"<< TotalTripPrice << ",Total Resource Price: " << TotalResourcePrice << ",Total Price:" << TotalTripPrice-TotalResourcePrice << endl;
 
 		//final export to log file at last iteration
-		if(	LR_Iteration+1 == g_MaxNumberOfLRIterations)
+		if(	LR_Iteration+1 >= g_MaxNumberOfLRIterations)
 		{
+		int infeasibility_count  = 0;
+
 			for (iLink = g_LinkSet.begin(); iLink != g_LinkSet.end(); iLink++)
 			{
 				int t;
@@ -217,6 +229,7 @@ bool g_TimetableOptimization_Lagrangian_Method()
 					if((*iLink)->m_ResourceAry[t].UsageCount > (*iLink)->m_LinkCapacity)
 					{
 						g_LogFile << "Capacity is exceeded: Link" << (*iLink)->m_FromNodeNumber << "->" <<  (*iLink)->m_ToNodeNumber << ",Time: " << t <<", Usage Counter = " <<(*iLink)->m_ResourceAry[t].UsageCount << ", Capacity = " << (*iLink)->m_LinkCapacity<< endl;
+						infeasibility_count++;
 					}
 				}
 			}
@@ -236,8 +249,19 @@ bool g_TimetableOptimization_Lagrangian_Method()
 			}
 
 						g_LogFile << "Total Lagrangian price = " << TotalPrice << endl;
+						g_LogFile << "Total Count of Infeasibility = " << infeasibility_count << endl;
 
+		
+		if(infeasibility_count ==0)
+		{
+			g_LogFile << "Feasible solution is found. Search ends!" << endl;
+			break;
 		}
+		
+		}
+
+
+
 	}
 
 
