@@ -143,7 +143,7 @@ bool g_TimetableOptimization_Lagrangian_Method()
 		{
 				(*iLink)->m_ResourceAry[t].Price  += StepSize*((*iLink)->m_ResourceAry[t].UsageCount - (*iLink)->m_LinkCapacity);
 		}else 
-		{   //adding feasiblity panality
+		{   //adding feasiblity penalty
 				
 			if((*iLink)->m_ResourceAry[t].UsageCount > (*iLink)->m_LinkCapacity)
 			{
